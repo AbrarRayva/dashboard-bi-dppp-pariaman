@@ -67,3 +67,62 @@ def lengkapi_koordinat(df_kecamatan: pd.DataFrame, kolom_nama: str = "Kecamatan"
 # Urutan kuartal kronologis (untuk sorting line chart time-series)
 def urutkan_kuartal(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(["Tahun", "Kuartal"]).reset_index(drop=True)
+
+
+def suntik_font_inter():
+    """Injects CSS to force the Inter font globally on all Streamlit components without breaking icons."""
+    import streamlit as st
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        /* Set default font on base page elements and form controls */
+        html, body, input, select, textarea, button {
+            font-family: 'Inter', sans-serif !important;
+        }
+        
+        /* Restore font family for Streamlit Material Symbols / Icons */
+        span[data-testid="stIconMaterial"], 
+        .material-icons-sharp, 
+        .material-icons-outlined, 
+        .material-symbols-outlined, 
+        .material-symbols-rounded, 
+        .material-symbols-sharp {
+            font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Symbols Sharp', 'Material Icons' !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def tampilkan_kpi_card(label: str, nilai: str, subtext: str = None):
+    """Renders a premium light-themed KPI card using HTML to prevent text truncation."""
+    subtext_html = f'<div style="font-size: 0.75em; color: #64748B; margin-top: 2px; font-family: \'Inter\', sans-serif;">{subtext}</div>' if subtext else ''
+    card_html = f"""
+    <div style="
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-family: 'Inter', sans-serif;
+    ">
+        <div style="font-size: 0.72em; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; line-height: 1.2; font-family: 'Inter', sans-serif;">
+            {label}
+        </div>
+        <div style="font-size: 1.25em; color: #0F172A; font-weight: 700; line-height: 1.25; word-wrap: break-word; overflow-wrap: break-word; font-family: 'Inter', sans-serif;">
+            {nilai}
+        </div>
+        {subtext_html}
+    </div>
+    """
+    import streamlit as st
+    st.markdown(card_html, unsafe_allow_html=True)
+

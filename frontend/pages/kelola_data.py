@@ -8,32 +8,41 @@ incremental untuk memperbarui datamart.
 import streamlit as st
 import pandas as pd
 from db import get_db_stats, ingest_new_csv
+from utils import tampilkan_kpi_card, suntik_font_inter
+
+suntik_font_inter()
 
 # Proteksi halaman dari akses tanpa login / tanpa wewenang Admin
 if not st.session_state.get("logged_in", False) or st.session_state.get("role") != "Admin":
     st.error("Akses Ditolak. Halaman ini hanya untuk Administrator Sistem.")
     st.stop()
 
-st.title("⚙️ Kelola Data Pertanian")
+st.title("Kelola Data Pertanian")
 st.caption("Pembaruan data secara berkala dan manajemen kapasitas datamart")
+st.write("")
 
 # 1. Tampilkan statistik database saat ini
-st.markdown("### 📊 Status Datamart Saat Ini")
+st.markdown("### Status Datamart Saat Ini")
 try:
     stats = get_db_stats()
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Sampel Lahan", f"{stats['total_facts']:,}")
-    c2.metric("Rentang Pengujian", f"{stats['min_date']} s.d. {stats['max_date']}")
-    c3.metric("Kombinasi Tanaman", stats["total_komoditas"])
-    c4.metric("Jenis Pupuk Terdaftar", stats["total_pupuk"])
+    with c1:
+        tampilkan_kpi_card("Total Sampel Lahan", f"{stats['total_facts']:,}")
+    with c2:
+        tampilkan_kpi_card("Rentang Pengujian", f"{stats['min_date']} s.d. {stats['max_date']}")
+    with c3:
+        tampilkan_kpi_card("Kombinasi Tanaman", str(stats["total_komoditas"]))
+    with c4:
+        tampilkan_kpi_card("Jenis Pupuk Terdaftar", str(stats["total_pupuk"]))
 except Exception as e:
     st.error(f"Gagal memuat statistik database: {e}")
     st.stop()
 
+st.write("")
 st.divider()
 
 # 2. Upload Data Baru
-st.markdown("### 📤 Unggah Data Hasil Uji Tanah Baru")
+st.markdown("### Unggah Data Hasil Uji Lahan Baru")
 st.markdown(
     """
     Anda dapat menambahkan data hasil pengujian tanah baru ke database secara berkelanjutan. 
@@ -46,7 +55,7 @@ st.markdown(
 with st.expander("Format Kolom CSV yang Diterima (Klik untuk detail)"):
     st.write(
         """
-        File CSV harus memiliki kolom-kolom berikut (tidak sensitif terhadap kapitalisasi):
+        File CSV harus memiliki kolom-kolom berikut (tidak sensitif terhadap tipe huruf kapital):
         - **Temperature** (atau *Temparature*) : Suhu udara (°C)
         - **Humidity** : Kelembapan udara (%)
         - **Moisture** : Kelembapan tanah (%)
@@ -80,8 +89,7 @@ if uploaded_file is not None:
         if st.button("Simpan & Gabungkan Data ke Datamart", type="primary", use_container_width=True):
             with st.spinner("Sedang memproses dan mengimpor data ke PostgreSQL..."):
                 ingest_new_csv(new_data)
-            st.success("✅ Sukses! Data baru telah berhasil diimpor dan digabungkan ke datamart.")
-            st.balloons()
+            st.success("Sukses! Data baru telah berhasil diimpor dan digabungkan ke datamart.")
             
             # Refresh statistik halaman secara manual
             st.rerun()
