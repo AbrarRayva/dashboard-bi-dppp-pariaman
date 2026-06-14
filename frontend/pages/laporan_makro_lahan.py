@@ -68,42 +68,7 @@ if df_f.empty:
     st.stop()
 
 # ---------------------------------------------------------------------------
-# KPI CARDS
-# ---------------------------------------------------------------------------
-st.markdown("### KPI Utama Wilayah")
-
-total_sampel = len(df_f)
-rata_suhu = df_f["Temperature"].mean()
-rata_kelembapan = df_f["Humidity"].mean()
-
-jumlah_kritis_per_kec = (
-    df_f[df_f["Status_Defisiensi_Hara"] == "Kritis"]
-    .groupby("Kecamatan")
-    .size()
-    .sort_values(ascending=False)
-)
-kecamatan_kritis_tertinggi = jumlah_kritis_per_kec.index[0] if len(jumlah_kritis_per_kec) else "-"
-jumlah_kritis_tertinggi = jumlah_kritis_per_kec.iloc[0] if len(jumlah_kritis_per_kec) else 0
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    tampilkan_kpi_card("Total Sampel Lahan", f"{total_sampel:,}")
-with col2:
-    tampilkan_kpi_card("Rata-rata Suhu Lahan", f"{rata_suhu:.1f} °C")
-with col3:
-    tampilkan_kpi_card("Rata-rata Kelembapan", f"{rata_kelembapan:.1f} %")
-with col4:
-    tampilkan_kpi_card(
-        "Kecamatan Paling Kritis",
-        kecamatan_kritis_tertinggi,
-        f"{jumlah_kritis_tertinggi} sampel kritis"
-    )
-
-st.write("")
-
-# ---------------------------------------------------------------------------
-# ALERT & INITIAL RECOMMENDATION PANEL
+# AGREGASI DATA KECAMATAN (dihitung awal untuk sinkronisasi KPI & Peringatan)
 # ---------------------------------------------------------------------------
 ringkasan_kec = (
     df_f.groupby("Kecamatan")
@@ -125,7 +90,42 @@ if not ringkasan_kec.empty:
     kec_tertinggi_row = ringkasan_kec.loc[ringkasan_kec["pct_kritis"].idxmax()]
     kec_kritis_nama = kec_tertinggi_row["Kecamatan"]
     kec_kritis_pct = kec_tertinggi_row["pct_kritis"]
-    
+    jumlah_kritis_tertinggi = kec_tertinggi_row["jumlah_kritis"]
+else:
+    kec_kritis_nama = "-"
+    kec_kritis_pct = 0.0
+    jumlah_kritis_tertinggi = 0
+
+# ---------------------------------------------------------------------------
+# KPI CARDS
+# ---------------------------------------------------------------------------
+st.markdown("### KPI Utama Wilayah")
+
+total_sampel = len(df_f)
+rata_suhu = df_f["Temperature"].mean()
+rata_kelembapan = df_f["Humidity"].mean()
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    tampilkan_kpi_card("Total Sampel Lahan", f"{total_sampel:,}")
+with col2:
+    tampilkan_kpi_card("Rata-rata Suhu Lahan", f"{rata_suhu:.1f} °C")
+with col3:
+    tampilkan_kpi_card("Rata-rata Kelembapan", f"{rata_kelembapan:.1f} %")
+with col4:
+    tampilkan_kpi_card(
+        "Kecamatan Paling Kritis",
+        kec_kritis_nama,
+        f"{kec_kritis_pct:.1f}% lahan kritis ({jumlah_kritis_tertinggi} sampel)"
+    )
+
+st.write("")
+
+# ---------------------------------------------------------------------------
+# ALERT & INITIAL RECOMMENDATION PANEL
+# ---------------------------------------------------------------------------
+if not ringkasan_kec.empty:
     df_kec_kritis = df_f[df_f["Kecamatan"] == kec_kritis_nama]
     n_kritis_pct = (df_kec_kritis["Nitrogen"] < THRESHOLD_N).mean() * 100
     p_kritis_pct = (df_kec_kritis["Phosphorus"] < THRESHOLD_P).mean() * 100
